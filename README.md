@@ -82,7 +82,7 @@ A policy states that one resource (source) has the permission to perform an oper
 
 The right to create, modify or remove a policy for a resource is granted by being allowed to perform the WRITE operation on a URI that can be considered a root (higher level scope) than the resource in question.
 
-#Padme and OPA
+# Padme and OPA
 
 PADME defines a system that provides full lifecycle policy management and enforcement. OPA focuses on a policy definition language and its attendant execution.  PADME addresses definition, distribution, execution, and enforcement of policies in both legacy systems and modern architectures, with specific emphasis on issues arising from the CAP constraints. To enable this PADME provides a lightweight interface for centrally defining policies across disparate resources. Pluggable enforcers specific to each resource do policy enforcement.  PADME can leverage OPA where infrastructures are OPA enabled.
 
