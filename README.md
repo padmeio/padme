@@ -8,6 +8,11 @@ Version 0.1
 
 This is a working skeleton for driving work on the PADME spec.  This document presently consists of three sections: Problem Statement, Design Goals, and Skeletal Solution.   The Problem Statement defines the problem we are trying to address.  The Design Goals constrain the problem.  The Skeletal Solution contains an initial design.
 
+## Introductory Digression/News
+Video Presentations Provided at KubeCon:
+* (Padme Overview)[https://youtu.be/tT64MwgRqVo?t=6s]
+* (Padme Demo)[https://youtu.be/FVTT0E79hDY]
+
 # Problem Statement
 
 PADME streamlines configuration of access policies up and down the stack in a heterogeneous (cloud) environment.
