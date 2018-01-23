@@ -8,7 +8,7 @@ and to ensure architectural/design correctness rather than go code
 optimality. (The latter can be accomplished as we go).
 
 At present the full stack (Rule to Bundle is present).  Examples of 
-its use can be found in the tests (especially the PolicyBundle tests.
+its use can be found in the tests (especially the PolicyBundle tests).
 
 At present the following are our highest priorities in terms of todos:
 - policy serialization/deserialization to json
@@ -27,9 +27,10 @@ matchers that support wildcarding and the like. Support for
 different matchers for each different LLType will be necessary.
 
 Building:
-To fetch use go get 
+To fetch use 
+    go get 
 To build use:
-go test
-go install
+    go test
+    go install
 
 then import
