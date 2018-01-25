@@ -20,9 +20,7 @@ import (
     "fmt"
 )
 
-/**
- * Operator serialization
- */
+// marshalOp serializes an Operator
 func marshalOp(op Operator) (string, error) {
     var str string
     switch op {
@@ -35,6 +33,7 @@ func marshalOp(op Operator) (string, error) {
     return str, nil
 }
 
+// unmarshalOp deserializes an operator
 func unmarshalOp(str string) (Operator, error) {
     var op Operator
     switch str {
@@ -50,6 +49,7 @@ func unmarshalOp(str string) (Operator, error) {
 /**
  * RuleSet serialization
  */
+
 func (rs* RuleSet) MarshalJSON() ([]byte, error) {
     operator, err := marshalOp(rs.OOperator)
     if err != nil { return nil, err }
@@ -69,10 +69,8 @@ func (rs* RuleSet) MarshalJSON() ([]byte, error) {
     })
 }
 
-/**
- * Helper type that allows to partially deserialize a RuleSet so we can
- * use the standard JSON unmarshaler to deserialize the non-recursive objects.
- */
+// Helper type that allows to partially deserialize a RuleSet so we can
+// use the standard JSON unmarshaler to deserialize the non-recursive objects.
 type PartialRuleSet struct {
     Op string		    `json:"op"`
     Rule *json.RawMessage   `json:"rule"`
@@ -88,6 +86,7 @@ func (rs* RuleSet) UnmarshalJSON(data []byte) (error) {
     return err
 }
 
+// unmarshalRuleSet unmarshals a RuleSet recursively
 func unmarshalRuleSet(raw *PartialRuleSet) (*RuleSet, error) {
     if raw == nil { return nil, nil }
     var err error
@@ -101,7 +100,7 @@ func unmarshalRuleSet(raw *PartialRuleSet) (*RuleSet, error) {
     if raw.Rule != nil {
 	rule = &Rule{}
 	if err = json.Unmarshal(*raw.Rule, rule); err != nil {
-	    return nil, fmt.Errorf("Cannot unmarshal rule: %v", string(*raw.Rule))
+	    return nil, err
 	}
     }
 
@@ -117,46 +116,64 @@ func unmarshalRuleSet(raw *PartialRuleSet) (*RuleSet, error) {
 /**
  * PolicyLine serialization
  */
+
 func (pl *PolicyLine) MarshalJSON() ([]byte, error) {
     operator, err := marshalOp(pl.OOperator)
     if err != nil { return nil, err }
 
     // Use an alias type to avoid infinite recursion during serialization
     type Alias *PolicyLine
-    return json.Marshal(&struct {
+    return json.Marshal(&map[string]struct {
 	Op string	`json:"op"`
-	Policy *Policy	`json:policy,omitempty"`
+	Policy *Policy	`json:"policy,omitempty"`
 	Left Alias	`json:"left,omitempty"`
 	Right Alias	`json:"right,omitempty"`
     }{
-	Op: operator,
-	Policy: pl.PPolicy,
-	Left: Alias(pl.LArg),
-	Right: Alias(pl.RArg),
+	"policy_line": {
+	    Op: operator,
+	    Policy: pl.PPolicy,
+	    Left: Alias(pl.LArg),
+	    Right: Alias(pl.RArg),
+	},
     })
 }
 
-/**
- * Helper type that allows to partially deserialize a PolicyLine so we can
- * use the standard JSON unmarshaler to deserialize the non-recursive objects.
- */
+// Helper type that allows to partially deserialize a PolicyLine so we can
+// use the standard JSON unmarshaler to deserialize the non-recursive objects.
+// PolicyLine objects are wrapped in a "policy_line" tag for better readability
+// and to disambiguate the types when unmarshaling a PolicyBase type.
+//
+// Unlike RuleSets, we wrap this object because the generated JSON is easierto understand
+// this way. RuleSets are nested inside a Resource (and a "rules" tag), so there is no need
+// for an additional nesting level there.
 type PartialPolicyLine struct {
-    Op string			`json:"op"`
-    Policy *json.RawMessage	`json:"policy"`
-    Left *PartialPolicyLine	`json:"left"`
-    Right *PartialPolicyLine	`json:"right"`
+    Op string				    `json:"op"`
+    Policy *json.RawMessage		    `json:"policy"`
+    Left map[string]*PartialPolicyLine	    `json:"left"`
+    Right map[string]*PartialPolicyLine	    `json:"right"`
 }
 
+// Wrapper type to properly wrap and unwrap PolicyLine objects in a "policy_line" tag
+type WrappedPolicyLine map[string]json.RawMessage
+
 func (pl *PolicyLine) UnmarshalJSON(data []byte) (error) {
+    // First unwrap the object from the "policy_line" tag
+    var wrapper WrappedPolicyLine
+    if err := json.Unmarshal(data, &wrapper); err != nil { return err }
+    rawline, ok := wrapper["policy_line"];
+    if !ok { return nil } // No PolicyLine present; just return
+    // Once unwrapped, deserialize normally
     raw := &PartialPolicyLine{}
-    if err := json.Unmarshal(data, raw); err != nil { return err }
+    if err := json.Unmarshal(rawline, raw); err != nil { return err }
     policyline, err := unmarshalPolicyLine(raw)
     if err == nil { *pl = *policyline }
     return err
 }
 
+// unmarshalPolicyLine unmarshals an already unwrapped PolicyLine object
 func unmarshalPolicyLine(raw *PartialPolicyLine) (*PolicyLine, error) {
     if raw == nil { return nil, nil }
+
     var err error
     var op Operator
     var policy *Policy
@@ -168,15 +185,95 @@ func unmarshalPolicyLine(raw *PartialPolicyLine) (*PolicyLine, error) {
     if raw.Policy != nil {
 	policy = &Policy{}
 	if err = json.Unmarshal(*raw.Policy, policy); err != nil {
-	    return nil, fmt.Errorf("Cannot unmarshal policy: %v", string(*raw.Policy))
+	    return nil, err
 	}
     }
 
-    left, err = unmarshalPolicyLine(raw.Left)
-    if err != nil { return nil, err }
-    
-    right, err = unmarshalPolicyLine(raw.Right)
-    if err != nil { return nil, err }
+    // Unwrap and deserialize recursively
+
+    if unwrappedLeft, ok := raw.Left["policy_line"]; ok {
+        left, err = unmarshalPolicyLine(unwrappedLeft)
+	if err != nil { return nil, err }
+    }
+
+    if unwrappedRight, ok := raw.Right["policy_line"]; ok {
+        right, err = unmarshalPolicyLine(unwrappedRight)
+        if err != nil { return nil, err }
+    }
 
     return &PolicyLine{OOperator: op, PPolicy: policy, LArg: left, RArg: right}, nil
 }
+
+/**
+ * PolicyBundle serialization
+ */
+
+func (pb *PolicyBundle) UnmarshalJSON(data []byte) error {
+    // We need to manually deserialize the PolicyBundle becasuse the Policies
+    // list can hold different types of elements. We need to manually inspect each
+    // one to properly determine its type and unmarshal accordingly.
+    var raw map[string]json.RawMessage
+    if err := json.Unmarshal(data, &raw); err != nil { return err }
+
+    bundle := PolicyBundle{}
+
+    var format_version, policy_version int64
+    if err := json.Unmarshal(raw["format_version"], &format_version); err != nil { return err }
+    bundle.FormatVersion = uint64(format_version)
+    if err := json.Unmarshal(raw["policy_version"], &policy_version); err != nil { return err }
+    bundle.PolicyVersion = uint64(policy_version)
+
+    if err := json.Unmarshal(raw["description"], &bundle.Description); err != nil { return err }
+
+    var rawpolicies []json.RawMessage
+    if err := json.Unmarshal(raw["policies"], &rawpolicies); err != nil { return err }
+
+    // To resolve the right type of the underlying PolicyBase object, we first try
+    // to deserialize it as a PolicyLine. Since it is wrapped in a "policy_line" tag
+    // we can use that as a hint to determine the type of the object.
+    var modified bool
+    policies := []PolicyBase{}
+    for _, policybase := range rawpolicies {
+	policies, modified = readPolicyLine(policybase, policies)
+	// If the PolicyBase was not a PolicyLine, try to deserialize as a Policy
+	if !modified {
+	   policies, _ = readPolicy(policybase, policies)
+	}
+    }
+    bundle.Policies = policies
+
+    *pb = bundle
+    return nil
+}
+
+func readPolicy(policybase json.RawMessage, policies []PolicyBase) ([]PolicyBase, bool) {
+    policy := Policy{}
+    modified := false
+    if err := json.Unmarshal(policybase, &policy); err == nil {
+	policies = append(policies, &policy)
+	modified = true
+    }
+    return policies, modified
+}
+
+func readPolicyLine(policybase json.RawMessage, policies []PolicyBase) ([]PolicyBase, bool) {
+    var wrapper WrappedPolicyLine
+    modified := false
+    // Check if it is an object wrapped in a "polocy_line" tag
+    if err := json.Unmarshal(policybase, &wrapper); err == nil {
+	if _, ok := wrapper["policy_line"]; ok {
+	    line := PolicyLine{}
+	    // If it is wrapped, then deserialize it
+	    // FIXME: Note that we are deserializing again the whole object. This is because
+	    // the PolicyLine unmarshaler expects a wrapped element. We need to find a way to
+	    // do this better, as the "policybase" object has already been deserialised before, 
+	    // but we lost the wrapper in the process
+	    if err := json.Unmarshal(policybase, &line); err == nil {
+		policies = append(policies, &line)
+		modified = true
+	    }
+	}
+    }
+    return policies, modified
+}
+

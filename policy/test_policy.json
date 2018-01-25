@@ -1,195 +1,134 @@
 {
-    "op": "OR",
-    "Policy": null,
-    "left": {
-        "op": "NONE",
-        "Policy": {
-            "format_version": 0,
-            "policy_version": 0,
-            "description": "",
-            "target": {
-                "name": {
+  "format_version": 1,
+  "policy_version": 2,
+  "description": "",
+  "policies": [
+    {
+      "policy_line": {
+        "op": "OR",
+        "left": {
+          "policy_line": {
+            "op": "NONE",
+            "policy": {
+              "format_version": 0,
+              "policy_version": 0,
+              "description": "",
+              "target": {
+                "rules": {
+                  "op": "AND",
+                  "left": {
+                    "op": "AND",
+                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+                  },
+                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                },
+                "IdentifiedBy": { "name": "n1", "value": "v1" }
+              },
+              "allowed": [
+                {
+                  "rules": {
                     "op": "AND",
                     "left": {
-                        "op": "AND",
-                        "left": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "network",
-                                "layer_type": "ip",
-                                "pattern": "srcIp 10.0.0.1"
-                            }
-                        },
-                        "right": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "network",
-                                "layer_type": "tcp",
-                                "pattern": "destPort 80"
-                            }
-                        }
+                      "op": "AND",
+                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
                     },
-                    "right": {
-                        "op": "NONE",
-                        "rule": {
-                            "layer": "service",
-                            "layer_type": "www",
-                            "pattern": "service /home"
-                        }
-                    }
+                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                  },
+                  "IdentifiedBy": { "name": "n1", "value": "v1" }
+                }
+              ],
+              "disallowed": [ null ],
+              "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z" },
+              "rate": 0,
+              "location": { "name": "everywhere" },
+              "contents": null,
+              "signature": ""
+            }
+          }
+        },
+        "right": {
+          "policy_line": {
+            "op": "NONE",
+            "policy": {
+              "format_version": 0,
+              "policy_version": 0,
+              "description": "",
+              "target": {
+                "rules": {
+                  "op": "AND",
+                  "left": {
+                    "op": "AND",
+                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 443" } }
+                  },
+                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
                 },
-                "IdentifiedBy": {
-                    "name": "n1",
-                    "value": "v1"
-                }
-            },
-            "allowed": [
+                "IdentifiedBy": { "name": "n1", "value": "v1" }
+              },
+              "allowed": [
                 {
-                    "name": {
-                        "op": "AND",
-                        "left": {
-                            "op": "AND",
-                            "left": {
-                                "op": "NONE",
-                                "rule": {
-                                    "layer": "network",
-                                    "layer_type": "ip",
-                                    "pattern": "srcIp 10.0.0.1"
-                                }
-                            },
-                            "right": {
-                                "op": "NONE",
-                                "rule": {
-                                    "layer": "network",
-                                    "layer_type": "tcp",
-                                    "pattern": "destPort 80"
-                                }
-                            }
-                        },
-                        "right": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "service",
-                                "layer_type": "www",
-                                "pattern": "service /home"
-                            }
-                        }
+                  "rules": {
+                    "op": "AND",
+                    "left": {
+                      "op": "AND",
+                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 443" } }
                     },
-                    "IdentifiedBy": {
-                        "name": "n1",
-                        "value": "v1"
-                    }
+                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                  },
+                  "IdentifiedBy": { "name": "n1", "value": "v1" }
                 }
-            ],
-            "disallowed": [
-                null
-            ],
-            "timeline": {
-                "start": "0000-01-01T00:00:00Z",
-                "end": "3000-01-01T00:00:00Z"
-            },
-            "rate": 0,
-            "location": {
-                "name": "everywhere"
-            },
-            "contents": null,
-            "signature": ""
+              ],
+              "disallowed": [ null ],
+              "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z"
+              },
+              "rate": 0,
+              "location": { "name": "everywhere" },
+              "contents": null,
+              "signature": ""
+            }
+          }
         }
+      }
     },
-    "right": {
-        "op": "NONE",
-        "Policy": {
-            "format_version": 0,
-            "policy_version": 0,
-            "description": "",
-            "target": {
-                "name": {
-                    "op": "AND",
-                    "left": {
-                        "op": "AND",
-                        "left": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "network",
-                                "layer_type": "ip",
-                                "pattern": "srcIp 10.0.0.1"
-                            }
-                        },
-                        "right": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "network",
-                                "layer_type": "tcp",
-                                "pattern": "destPort 443"
-                            }
-                        }
-                    },
-                    "right": {
-                        "op": "NONE",
-                        "rule": {
-                            "layer": "service",
-                            "layer_type": "www",
-                            "pattern": "service /home"
-                        }
-                    }
-                },
-                "IdentifiedBy": {
-                    "name": "n1",
-                    "value": "v1"
-                }
+    {
+      "format_version": 0,
+      "policy_version": 0,
+      "description": "",
+      "target": {
+        "rules": {
+          "op": "AND",
+          "left": {
+            "op": "AND",
+            "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+            "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+          },
+          "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+        },
+        "IdentifiedBy": { "name": "n1", "value": "v1" }
+      },
+      "allowed": [
+        {
+          "rules": {
+            "op": "AND",
+            "left": {
+              "op": "AND",
+              "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
+              "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
             },
-            "allowed": [
-                {
-                    "name": {
-                        "op": "AND",
-                        "left": {
-                            "op": "AND",
-                            "left": {
-                                "op": "NONE",
-                                "rule": {
-                                    "layer": "network",
-                                    "layer_type": "ip",
-                                    "pattern": "srcIp 10.0.0.1"
-                                }
-                            },
-                            "right": {
-                                "op": "NONE",
-                                "rule": {
-                                    "layer": "network",
-                                    "layer_type": "tcp",
-                                    "pattern": "destPort 443"
-                                }
-                            }
-                        },
-                        "right": {
-                            "op": "NONE",
-                            "rule": {
-                                "layer": "service",
-                                "layer_type": "www",
-                                "pattern": "service /home"
-                            }
-                        }
-                    },
-                    "IdentifiedBy": {
-                        "name": "n1",
-                        "value": "v1"
-                    }
-                }
-            ],
-            "disallowed": [
-                null
-            ],
-            "timeline": {
-                "start": "0000-01-01T00:00:00Z",
-                "end": "3000-01-01T00:00:00Z"
-            },
-            "rate": 0,
-            "location": {
-                "name": "everywhere"
-            },
-            "contents": null,
-            "signature": ""
-        }
+            "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+          },
+          "IdentifiedBy": { "name": "n1", "value": "v1" } }
+      ],
+      "disallowed": [ null ],
+      "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z" },
+      "rate": 0,
+      "location": { "name": "everywhere" },
+      "contents": null,
+      "signature": ""
     }
+  ]
 }
 

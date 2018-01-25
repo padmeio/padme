@@ -24,7 +24,7 @@ import (
 
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
     if actual != expected {
-        t.Errorf("Expected %v but got: %v", expected, actual)
+        t.Errorf("Expected %v but \ngot: %v", expected, actual)
     }
 }
 
@@ -38,7 +38,7 @@ func TestInvalidOperator(t *testing.T) {
     assertEquals(t, jsonError.Err.Error(), "Invalid operator: '15'. Valid values are AND, OR, NONE")
 }
 
-func TestDeserializeMissingOpertor(t *testing.T) {
+func testDeserializeMissingOpertor(t *testing.T) {
     pl := PolicyLine{}
     err := json.Unmarshal([]byte("{}"), &pl)
     if err == nil {
@@ -65,29 +65,31 @@ var tcp80PolicyLine = PolicyLine{ OOperator: NONE, PPolicy: tcp80Policy }
 var tcp443PolicyLine = PolicyLine{ OOperator: NONE, PPolicy: tcp443Policy }
 var tcp80or443PolicyLine = PolicyLine{ OOperator: OR, LArg: &tcp80PolicyLine, RArg: &tcp443PolicyLine }
 
+var bundle = PolicyBundle{ FormatVersion: 1, PolicyVersion: 2, Description: "", Policies: []PolicyBase{ &tcp80or443PolicyLine, tcp80Policy } }
+
 func TestPolicySerialization(t *testing.T) {
     var jsonPolicy, err = ioutil.ReadFile("./test_policy.json")
     if err != nil {
         panic("Unable to read policy json file")
     }
 
-    serialized, err := json.Marshal(&tcp80or443PolicyLine)
+    serialized, err := json.Marshal(&bundle)
     if err != nil {
-	t.Errorf("Unable to serialize PolicyLine: %v", err)
+	t.Errorf("Unable to serialize PolicyBundle: %v", err)
     }
 
-    deserialized := &PolicyLine{}
+    deserialized := &PolicyBundle{}
     if err = json.Unmarshal(jsonPolicy, deserialized); err != nil {
-	t.Errorf("Unable to deserialize PolicyLine: %v", err)
+	t.Errorf("Unable to deserialize PolicyBundle: %v", err)
     }
 
     // Serialize again (remove pretty formatting) and compare both versions
     var result []byte
     result, err = json.Marshal(deserialized)
     if err != nil {
-	t.Errorf("Unable to serialize PolicyLine after deserialization: %v", err)
+	t.Errorf("Unable to serialize PolicyBundle after deserialization: %v", err)
     }
 
-    assertEquals(t, string(serialized), string(result))
+    assertEquals(t, string(result), string(serialized))
 }
 

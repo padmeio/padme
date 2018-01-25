@@ -275,7 +275,7 @@ func (c* Credential) String() string {
 
 /** Resource Identifier */
 type Resource struct {
-    Name* RuleSet		`json:"name"`
+    Name* RuleSet		`json:"rules"`
     IdentifiedBy* Credential	`json:identified_by"`
 }
 
