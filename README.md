@@ -10,8 +10,8 @@ This is a working skeleton for driving work on the PADME spec.  This document pr
 
 ## Introductory Digression/News
 Video Presentations Provided at KubeCon:
-* (Padme Overview)[https://youtu.be/tT64MwgRqVo?t=6s]
-* (Padme Demo)[https://youtu.be/FVTT0E79hDY]
+* [Padme Overview](https://youtu.be/tT64MwgRqVo?t=6s)
+* [Padme Demo](https://youtu.be/FVTT0E79hDY)
 
 # Problem Statement
 
