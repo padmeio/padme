@@ -23,12 +23,6 @@ import (
 /**
  * Operator serialization
  */
-type InvalidOperatorError Operator
-
-func (oe InvalidOperatorError) Error() string {
-    return fmt.Sprintf("Invalid operator: %v. Valid values are AND, OR, NONE", oe)
-}
-
 func marshalOp(op Operator) (string, error) {
     var str string
     switch op {
@@ -36,7 +30,7 @@ func marshalOp(op Operator) (string, error) {
     case OR: str = "OR"
     case NONE: str = "NONE"
     default:
-	return "", InvalidOperatorError(op)
+	return "", fmt.Errorf("Invalid operator: '%v'. Valid values are AND, OR, NONE", op)
     }
     return str, nil
 }
@@ -48,7 +42,7 @@ func unmarshalOp(str string) (Operator, error) {
     case "OR": op = OR
     case "NONE": op = NONE
     default:
-	return NONE, InvalidOperatorError(op)
+	return NONE, fmt.Errorf("Invalid operator: '%v'. Valid values are AND, OR, NONE", str)
     }
     return op, nil
 }
@@ -58,9 +52,8 @@ func unmarshalOp(str string) (Operator, error) {
  */
 func (rs* RuleSet) MarshalJSON() ([]byte, error) {
     operator, err := marshalOp(rs.OOperator)
-    if err != nil {
-	return nil, err
-    }
+    if err != nil { return nil, err }
+
     // Use an alias type to avoid infinite recursion during serialization
     type Alias *RuleSet
     return json.Marshal(&struct {
@@ -76,61 +69,114 @@ func (rs* RuleSet) MarshalJSON() ([]byte, error) {
     })
 }
 
+/**
+ * Helper type that allows to partially deserialize a RuleSet so we can
+ * use the standard JSON unmarshaler to deserialize the non-recursive objects.
+ */
+type PartialRuleSet struct {
+    Op string		    `json:"op"`
+    Rule *json.RawMessage   `json:"rule"`
+    Left *PartialRuleSet    `json:"left"`
+    Right *PartialRuleSet   `json:"right"`
+}
+
 func (rs* RuleSet) UnmarshalJSON(data []byte) (error) {
-    // We cannot unmarshal directl to recursive structs using pointers, so let's
-    // unmarshal the struct manually
-    var raw map[string]interface{}
-    if err := json.Unmarshal(data, &raw); err != nil {
-	return err
-    }
+    raw := &PartialRuleSet{}
+    if err := json.Unmarshal(data, raw); err != nil { return err }
     ruleset, err := unmarshalRuleSet(raw)
-    if err == nil {
-        *rs = *ruleset
-    }
+    if err == nil { *rs = *ruleset }
     return err
 }
 
-func unmarshalRuleSet(raw map[string]interface{}) (*RuleSet, error) {
-    rawop, hasop := raw["op"]
-    rawrule, hasrule := raw["rule"]
-    rawleft, hasleft := raw["left"]
-    rawright, hasright := raw["right"]
-
+func unmarshalRuleSet(raw *PartialRuleSet) (*RuleSet, error) {
+    if raw == nil { return nil, nil }
     var err error
     var op Operator
     var rule *Rule
     var left, right *RuleSet
 
-    if !hasop {
-	// FIXME: Use NONE instead of failing? 
-	return nil, fmt.Errorf("Missing operator!")
-    }
+    op, err = unmarshalOp(raw.Op)
+    if err != nil { return nil, err }
 
-    op, err = unmarshalOp(rawop.(string))
-    if err != nil {
-	return nil, err
-    }
-
-    if hasrule {
-	r := rawrule.(map[string]interface{})
-	rule = &Rule{Layer: fmt.Sprintf("%v", r["layer"]),
-		    LType: fmt.Sprintf("%v", r["layer_type"]),
-		    Pattern: fmt.Sprintf("%v", r["pattern"])}
-    }
-
-    if hasleft {
-	left, err = unmarshalRuleSet(rawleft.(map[string]interface{}))
-	if err != nil {
-	    return nil, err
+    if raw.Rule != nil {
+	rule = &Rule{}
+	if err = json.Unmarshal(*raw.Rule, rule); err != nil {
+	    return nil, fmt.Errorf("Cannot unmarshal rule: %v", string(*raw.Rule))
 	}
     }
 
-    if hasright {
-	right, err = unmarshalRuleSet(rawright.(map[string]interface{}))
-	if err != nil {
-	    return nil, err
-	}
-    }
+    left, err = unmarshalRuleSet(raw.Left)
+    if err != nil { return nil, err }
+
+    right, err = unmarshalRuleSet(raw.Right)
+    if err != nil { return nil, err }
 
     return &RuleSet{OOperator: op, RRule: rule, LArg: left, RArg: right}, nil
+}
+
+/**
+ * PolicyLine serialization
+ */
+func (pl *PolicyLine) MarshalJSON() ([]byte, error) {
+    operator, err := marshalOp(pl.OOperator)
+    if err != nil { return nil, err }
+
+    // Use an alias type to avoid infinite recursion during serialization
+    type Alias *PolicyLine
+    return json.Marshal(&struct {
+	Op string	`json:"op"`
+	Policy *Policy	`json:policy,omitempty"`
+	Left Alias	`json:"left,omitempty"`
+	Right Alias	`json:"right,omitempty"`
+    }{
+	Op: operator,
+	Policy: pl.PPolicy,
+	Left: Alias(pl.LArg),
+	Right: Alias(pl.RArg),
+    })
+}
+
+/**
+ * Helper type that allows to partially deserialize a PolicyLine so we can
+ * use the standard JSON unmarshaler to deserialize the non-recursive objects.
+ */
+type PartialPolicyLine struct {
+    Op string			`json:"op"`
+    Policy *json.RawMessage	`json:"policy"`
+    Left *PartialPolicyLine	`json:"left"`
+    Right *PartialPolicyLine	`json:"right"`
+}
+
+func (pl *PolicyLine) UnmarshalJSON(data []byte) (error) {
+    raw := &PartialPolicyLine{}
+    if err := json.Unmarshal(data, raw); err != nil { return err }
+    policyline, err := unmarshalPolicyLine(raw)
+    if err == nil { *pl = *policyline }
+    return err
+}
+
+func unmarshalPolicyLine(raw *PartialPolicyLine) (*PolicyLine, error) {
+    if raw == nil { return nil, nil }
+    var err error
+    var op Operator
+    var policy *Policy
+    var left, right *PolicyLine
+
+    op, err = unmarshalOp(raw.Op)
+    if err != nil { return nil, err }
+
+    if raw.Policy != nil {
+	policy = &Policy{}
+	if err = json.Unmarshal(*raw.Policy, policy); err != nil {
+	    return nil, fmt.Errorf("Cannot unmarshal policy: %v", string(*raw.Policy))
+	}
+    }
+
+    left, err = unmarshalPolicyLine(raw.Left)
+    if err != nil { return nil, err }
+    
+    right, err = unmarshalPolicyLine(raw.Right)
+    if err != nil { return nil, err }
+
+    return &PolicyLine{OOperator: op, PPolicy: policy, LArg: left, RArg: right}, nil
 }
