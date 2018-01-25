@@ -1,4 +1,20 @@
 /**
+ * Copyright 2017 Kamil Pawlowski, Ignasi Barrera
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * PADME Policy defintion (v2) See relevant Padme Doc
  *
  * The matchers in this code operate on two concepts: 
@@ -59,21 +75,6 @@
  * SRC IP = 10.0.0.1 DEST_PORT=443 SVC=/bar
  * Beacuse we do this one at rule at a time, SRC IP must be allowed to partially match
  * but once we start composing SRC_IP and DEST_PORT or futher must fail.
- * 
- *
- * Copyright Kamil Pawlowski 2017
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 package policy
 
@@ -91,9 +92,9 @@ var logger = log.New(os.Stdout, "", log.Lshortfile)
  * Defintion of Rule and RuleSet for identification
  */
 type Rule struct {
-    Layer string
-    LType string
-    Pattern string
+    Layer string    `json:"layer"`
+    LType string    `json:"layer_type"`
+    Pattern string  `json:"pattern"`
 }
 
 /**
@@ -256,8 +257,8 @@ func (rs* RuleSet) String() string {
  * expect this to change/expand
  */
 type Credential struct {
-    Name string
-    Value string
+    Name string		`json:"name"`
+    Value string	`json:"value"`
 }
 
 /**
@@ -274,8 +275,8 @@ func (c* Credential) String() string {
 
 /** Resource Identifier */
 type Resource struct {
-    Name* RuleSet
-    IdentifiedBy* Credential
+    Name* RuleSet		`json:"name"`
+    IdentifiedBy* Credential	`json:identified_by"`
 }
 
 /** 
@@ -308,8 +309,8 @@ func (r* Resource) String() string {
 
 /** Defines when policies come into and go out of effect*/
 type Duration struct {
-    Start time.Time
-    End time.Time
+    Start time.Time	`json:"start"`
+    End time.Time	`json:"end"`
 }
 
 func (d* Duration) String() string {
@@ -318,7 +319,7 @@ func (d* Duration) String() string {
 
 /** As we refine location support this will become more full featured */
 type Location struct {
-    Name string
+    Name string	    `json:"name"`
 }
 
 /** a simple total equality location matcher */
@@ -335,8 +336,8 @@ func (l* Location) String() string {
 
 /** Contents are used to pass opaque plugin specific information */
 type Contents struct {
-    PluginId string
-    Blob string
+    PluginId string	    `json:"plugin_id"`
+    Blob string		    `json:"blob"`
 }
 
 /** Interface used for matching in PolicyBundle */
@@ -371,17 +372,17 @@ const PolicyFormatVersion uint64 = 0
 
 /** Defintion of a Policy */
 type Policy struct {
-    FormatVersion uint64
-    PolicyVersion uint64
-    Description string
-    Target Resource
-    Allowed []*Resource
-    Disallowed []*Resource
-    Timeline Duration
-    Rate uint64
-    LLocation Location
-    CContents []*Contents
-    Signature string
+    FormatVersion uint64	`json:"format_version"`
+    PolicyVersion uint64	`json:"policy_version"`
+    Description string		`json:"description"`
+    Target Resource		`json:"target"`
+    Allowed []*Resource		`json:"allowed"`
+    Disallowed []*Resource	`json:"disallowed"`
+    Timeline Duration		`json:"timeline"`
+    Rate uint64			`json:"rate"`
+    LLocation Location		`json:"location"`
+    CContents []*Contents	`json:"contents"`
+    Signature string		`json:"signature"`
 }
 
 /**
@@ -515,10 +516,10 @@ func (p* PolicyLine) String() string {
 const PolicyBundleFormatVersion uint64 = 0
 
 type PolicyBundle struct {
-    FormatVersion uint64
-    PolicyVersion uint64
-    Description string
-    Policies []PolicyBase
+    FormatVersion uint64	`json:"format_version"`
+    PolicyVersion uint64	`json:"policy_version"`
+    Description string		`json:"description"`
+    Policies []PolicyBase	`json:"policies"`
 }
 
 /**

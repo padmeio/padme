@@ -27,9 +27,13 @@ matchers that support wildcarding and the like. Support for
 different matchers for each different LLType will be necessary.
 
 Building:
+
 To fetch use 
+
     go get 
+
 To build use:
+
     go test
     go install
 
