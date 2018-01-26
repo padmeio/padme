@@ -336,8 +336,8 @@ func (l* Location) String() string {
 
 /** Contents are used to pass opaque plugin specific information */
 type Contents struct {
-    PluginId string	    `json:"plugin_id"`
-    Blob string		    `json:"blob"`
+    PluginId string
+    Blob []byte
 }
 
 /** Interface used for matching in PolicyBundle */
@@ -381,7 +381,7 @@ type Policy struct {
     Timeline Duration		`json:"timeline"`
     Rate uint64			`json:"rate"`
     LLocation Location		`json:"location"`
-    CContents []*Contents	`json:"contents"`
+    CContents []*Contents	`json:"contents,omitempty"`
     Signature string		`json:"signature"`
 }
 

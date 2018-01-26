@@ -39,11 +39,11 @@
                   "IdentifiedBy": { "name": "n1", "value": "v1" }
                 }
               ],
-              "disallowed": [ null ],
+              "disallowed": [  ],
               "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z" },
               "rate": 0,
               "location": { "name": "everywhere" },
-              "contents": null,
+              "contents": [ {"plugin_id": "vendor_plugin", "blob": "Q3VzdG9tIHZlbmRvciBkYXRh" } ],
               "signature": ""
             }
           }
@@ -81,12 +81,11 @@
                   "IdentifiedBy": { "name": "n1", "value": "v1" }
                 }
               ],
-              "disallowed": [ null ],
+              "disallowed": [  ],
               "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z"
               },
               "rate": 0,
               "location": { "name": "everywhere" },
-              "contents": null,
               "signature": ""
             }
           }
@@ -122,11 +121,11 @@
           },
           "IdentifiedBy": { "name": "n1", "value": "v1" } }
       ],
-      "disallowed": [ null ],
+      "disallowed": [  ],
       "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z" },
       "rate": 0,
       "location": { "name": "everywhere" },
-      "contents": null,
+      "contents": [ {"plugin_id": "vendor_plugin", "blob": "Q3VzdG9tIHZlbmRvciBkYXRh" } ],
       "signature": ""
     }
   ]

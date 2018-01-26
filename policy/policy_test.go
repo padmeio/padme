@@ -20,6 +20,7 @@
 package policy
 
 import (
+    "encoding/json"
     "testing"
     "time"
 )
@@ -81,13 +82,19 @@ func makeServiceRule(service string) *RuleSet {
 }
 
 func makePolicy(target Resource, allowed *Resource, disallowed *Resource, timeline Duration, location Location) *Policy {
+    // Avoid lists with nil elements
+    allow := []*Resource{}
+    forbid := []*Resource{}
+    if allowed != nil { allow = append(allow, allowed) }
+    if disallowed != nil { forbid = append(forbid,disallowed) }
+
     var p = Policy {
         FormatVersion: 0,
         PolicyVersion: 0,
         Description: "",
         Target: target,
-        Allowed: []*Resource{allowed},
-        Disallowed: []*Resource{disallowed},
+        Allowed: allow,
+        Disallowed: forbid,
         Timeline: timeline,
         Rate: 0,
         LLocation: location,
@@ -97,6 +104,11 @@ func makePolicy(target Resource, allowed *Resource, disallowed *Resource, timeli
     return &p
 }
 
+func addPolicyContents(policy *Policy, contents ...*Contents) {
+    for _, c := range contents {
+	policy.CContents = append(policy.CContents, c)
+    }
+}
 
 func TestRuleMatch(t *testing.T) {
     accept, match := r1.Match(&r2)
@@ -425,4 +437,40 @@ func TestPolicyBundleMatch(t* testing.T) {
         t.Errorf("allow pb should  allow %v %v %v", valid, accept, allow)
     }
 
+}
+
+func TestPolicySerializeAndMatch(t *testing.T) {
+    var c1 = Credential{ Name: "n1", Value: "v1" }
+    var forever =  Duration{ time.Date(0, 1, 1, 0,0,0,0, time.UTC), time.Date(3000, 1,1, 0,0,0,0, time.UTC) }
+    var everywhere = Location { "everywhere" }
+
+    var tcp80Name = makeIPRule("10.0.0.1").And(makeTCPRule("80")).And(makeServiceRule("/home"))
+    var tcp443Name = makeIPRule("10.0.0.1").And(makeTCPRule("443")).And(makeServiceRule("/home"))
+
+    var tcp80Resource = Resource{ Name: tcp80Name, IdentifiedBy: &c1 }
+    var tcp443Resource = Resource{ Name: tcp443Name, IdentifiedBy: &c1 }
+
+    var tcp80Policy = makePolicy(tcp80Resource, &tcp80Resource, nil,  forever, everywhere)
+    var tcp443Policy = makePolicy(tcp443Resource, &tcp443Resource, nil,  forever, everywhere)
+    tcp80Policy.Description = "tcp80Policy"
+    tcp443Policy.Description = "tcp443Policy"
+
+    var tcp80PolicyLine = PolicyLine{ OOperator: NONE, PPolicy: tcp80Policy }
+    var allowPB = PolicyBundle{ FormatVersion: 0, PolicyVersion: 0, Description: "", Policies: [] PolicyBase{tcp443Policy, &tcp80PolicyLine } }
+
+    serialized, err := json.Marshal(&allowPB)
+    if err != nil {
+	t.Errorf("Unable to serialize PolicyBundle: %v", err)
+    }
+
+    deserialized := &PolicyBundle{}
+    if err = json.Unmarshal(serialized, deserialized); err != nil {
+	t.Errorf("Unable to deserialize PolicyBundle: %v", err)
+    }
+
+    valid, accept, allow := deserialized.Match(&tcp80Resource, &tcp80Resource, time.Now(), &everywhere)
+
+    if (valid == false || accept == false || allow == false ){
+        t.Errorf("allow pb should  allow %v %v %v", valid, accept, allow)
+    }
 }

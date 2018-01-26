@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kamil Pawlowski, Ignasi Barrera
+ * Copyright 2018 Ignasi Barrera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,9 @@ func TestPolicySerialization(t *testing.T) {
     if err != nil {
         panic("Unable to read policy json file")
     }
+
+    // Add some content to the policies
+    addPolicyContents(tcp80Policy, &Contents{PluginId: "vendor_plugin", Blob: []byte("Custom vendor data")})
 
     serialized, err := json.Marshal(&bundle)
     if err != nil {

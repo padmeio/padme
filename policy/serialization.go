@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Kamil Pawlowski, Ignasi Barrera
+ * Copyright 2018 Ignasi Barrera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package policy
 
 import (
+    "encoding/base64"
     "encoding/json"
     "fmt"
 )
@@ -111,6 +112,38 @@ func unmarshalRuleSet(raw *PartialRuleSet) (*RuleSet, error) {
     if err != nil { return nil, err }
 
     return &RuleSet{OOperator: op, RRule: rule, LArg: left, RArg: right}, nil
+}
+
+/**
+ * Content encoding
+ */
+
+// Helper struct to Base64 encode the blob contents when serializing
+type PlainContents struct {
+    PluginId string	    `json:"plugin_id"`
+    StrBlob string	    `json:"blob"`
+}
+
+func (c *Contents) MarshalJSON() ([]byte, error) {
+    encoded := base64.StdEncoding.EncodeToString(c.Blob)
+    return json.Marshal(&PlainContents {
+	PluginId: c.PluginId,
+	StrBlob: encoded,
+    })
+}
+
+func (c *Contents) UnmarshalJSON(data []byte) error {
+    plainContents := PlainContents{}
+    if err := json.Unmarshal(data, &plainContents); err != nil { return err }
+
+    contents := Contents{}
+    blob, err := base64.StdEncoding.DecodeString(plainContents.StrBlob)
+    if err != nil { return err }
+    contents.PluginId = plainContents.PluginId
+    contents.Blob = blob
+
+    *c = contents
+    return nil
 }
 
 /**
