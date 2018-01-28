@@ -143,7 +143,7 @@ type RuleSet struct {
 	RArg      *RuleSet
 }
 
-// Match_r evaluates if a rule matches a RuleSet
+// MatchRule evaluates if a rule matches a RuleSet
 //
 // This returns two values, the first indicates if
 // any Layer/LType combination was applicable.
@@ -163,19 +163,19 @@ type RuleSet struct {
 // otherwise it must just match one of them completely
 //
 // The AND match here must be able to say: ip == foo and tcp port = bar
-func (rs *RuleSet) Match_r(r *Rule) (bool, bool) {
+func (rs *RuleSet) MatchRule(r *Rule) (bool, bool) {
 	if rs.OOperator == NONE {
 		return rs.RRule.Match(r)
 	}
 	if rs.OOperator == AND {
-		lAccept, lMatch := rs.LArg.Match_r(r)
+		lAccept, lMatch := rs.LArg.MatchRule(r)
 		//rules only apply at a given Layer, so
 		//if lAccept is false, then its like it never
 		//happened.
 
 		//we can't short circuit because we need accept to
 		//be correct
-		rAccept, rMatch := rs.RArg.Match_r(r)
+		rAccept, rMatch := rs.RArg.MatchRule(r)
 
 		if rAccept && lAccept {
 			return true, rMatch && lMatch
@@ -186,11 +186,11 @@ func (rs *RuleSet) Match_r(r *Rule) (bool, bool) {
 	if rs.OOperator == OR {
 		//or is easier. if lhs accepts and matches, we're done
 		//otherwise let rhs have a go.
-		lAccept, lMatch := rs.LArg.Match_r(r)
+		lAccept, lMatch := rs.LArg.MatchRule(r)
 		if lAccept && lMatch {
 			return true, true
 		}
-		rAccept, rMatch := rs.RArg.Match_r(r)
+		rAccept, rMatch := rs.RArg.MatchRule(r)
 		if rAccept && rMatch {
 			return true, true
 		}
@@ -201,21 +201,21 @@ func (rs *RuleSet) Match_r(r *Rule) (bool, bool) {
 	return false, false
 }
 
-// Match_rs recursively evaluates a RuleSet for another RuleSet
+// Match recursively evaluates a RuleSet for another RuleSet
 //
 // This returns two values, the first indicates if
 // any Layer/LType combination was applicable.
 // The second if there was a match.
-func (rs *RuleSet) Match_rs(rs1 *RuleSet) (bool, bool) {
+func (rs *RuleSet) Match(rs1 *RuleSet) (bool, bool) {
 	if rs1.OOperator == NONE {
-		return rs.Match_r(rs1.RRule)
+		return rs.MatchRule(rs1.RRule)
 	}
 	if rs1.OOperator == AND {
-		lAccept, lMatch := rs.Match_rs(rs1.LArg)
+		lAccept, lMatch := rs.Match(rs1.LArg)
 		if !lAccept {
 			return false, false
 		}
-		rAccept, rMatch := rs.Match_rs(rs1.RArg)
+		rAccept, rMatch := rs.Match(rs1.RArg)
 		if !rAccept {
 			return false, false
 		}
@@ -223,11 +223,11 @@ func (rs *RuleSet) Match_rs(rs1 *RuleSet) (bool, bool) {
 	}
 
 	if rs1.OOperator == OR {
-		lAccept, lMatch := rs.Match_rs(rs1.LArg)
+		lAccept, lMatch := rs.Match(rs1.LArg)
 		if lAccept && lMatch {
 			return true, true
 		}
-		rAccept, rMatch := rs.Match_rs(rs1.RArg)
+		rAccept, rMatch := rs.Match(rs1.RArg)
 		if rAccept && rMatch {
 			return true, true
 		}
@@ -293,7 +293,7 @@ type Resource struct {
 // level accept. match indicate a rule level match
 // and credential acceptance.
 func (r *Resource) Match(r1 *Resource) (bool, bool) {
-	accept, match := r.Name.Match_rs(r1.Name)
+	accept, match := r.Name.Match(r1.Name)
 	if !accept {
 		return false, false
 	}

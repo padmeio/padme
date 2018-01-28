@@ -129,103 +129,103 @@ func TestRuleMatch(t *testing.T) {
 }
 
 func TestRuleSetNoneRuleMatch(t *testing.T) {
-	accept, match := rsNone1.Match_r(&r2)
+	accept, match := rsNone1.MatchRule(&r2)
 	expect(t, "rsNone1 should not accept or match r2", false, false, accept, match)
 
-	accept, match = rsNone1.Match_r(&r4)
+	accept, match = rsNone1.MatchRule(&r4)
 	expect(t, "rsNone1 should accept but not match r4", true, false, accept, match)
 
-	accept, match = rsNone1.Match_r(&r5)
+	accept, match = rsNone1.MatchRule(&r5)
 	expect(t, "rsNone1 should accept and match r5", true, true, accept, match)
 }
 
 func TestRuleSetAndRuleMatch(t *testing.T) {
-	accept, match := rsAnd1.Match_r(&r1)
+	accept, match := rsAnd1.MatchRule(&r1)
 	expect(t, "rsAnd1 should accept and match r1", true, true, accept, match)
 
-	accept, match = rsAnd1.Match_r(&r2)
+	accept, match = rsAnd1.MatchRule(&r2)
 	expect(t, "rsAnd1 should accept and match r2", true, true, accept, match)
 
-	accept, match = rsAnd1.Match_r(&r3)
+	accept, match = rsAnd1.MatchRule(&r3)
 	expect(t, "rsAnd1 should not accept nor match r3", false, false, accept, match)
 
-	accept, match = rsAnd2.Match_r(&r3)
+	accept, match = rsAnd2.MatchRule(&r3)
 	expect(t, "rsAnd2 should not accept nor match r3", false, false, accept, match)
 
-	accept, match = rsAnd2.Match_r(&r5)
+	accept, match = rsAnd2.MatchRule(&r5)
 	expect(t, "rsAnd2 should accept and match  r5", true, true, accept, match)
 }
 
 func TestRuleSetOrRuleMatch(t *testing.T) {
-	accept, match := rsOr2.Match_r(&r2)
+	accept, match := rsOr2.MatchRule(&r2)
 	expect(t, "rsOr2 should not accept nor match r2", false, false, accept, match)
 
-	accept, match = rsOr1.Match_r(&r4)
+	accept, match = rsOr1.MatchRule(&r4)
 	expect(t, "rsOr1 should accept but not match r4", true, false, accept, match)
 
-	accept, match = rsOr1.Match_r(&r5)
+	accept, match = rsOr1.MatchRule(&r5)
 	expect(t, "rsOr1 should accept and match r5", true, true, accept, match)
 
-	accept, match = rsOr3.Match_r(&r6)
+	accept, match = rsOr3.MatchRule(&r6)
 	expect(t, "rsOr3 should accept but not match r6", true, false, accept, match)
 
-	accept, match = rsOr3.Match_r(&r3)
+	accept, match = rsOr3.MatchRule(&r3)
 	expect(t, "rsOr1 should accept and match r3", true, true, accept, match)
 }
 
 func TestRuleSetRuleSetMatch(t *testing.T) {
 	//here None is in the target rulesset
-	accept, match := rsNone1.Match_rs(&rsNone2)
+	accept, match := rsNone1.Match(&rsNone2)
 	expect(t, "rsNone1 should neither accept nor match rsNone2", false, false, accept, match)
 
-	accept, match = rsNone1.Match_rs(&rsNone4)
+	accept, match = rsNone1.Match(&rsNone4)
 	expect(t, "rsNone1 should accept but not match rsNone4", true, false, accept, match)
 
-	accept, match = rsNone1.Match_rs(&rsNone5)
+	accept, match = rsNone1.Match(&rsNone5)
 	expect(t, "rsNone1 should accept and match rsNone5", true, true, accept, match)
 
 	//rsAnd1 -> none1 && none2 -> l1/t1/p && l1/t2/p
 	//rsAnd3 -> none1 && none3 -> l2/t1/p && l1/t1/p
-	accept, match = rsAnd1.Match_rs(&rsAnd3)
+	accept, match = rsAnd1.Match(&rsAnd3)
 	expect(t, "rsAnd1 niether accepts nor matches rsAnd2", false, false, accept, match)
 
-	accept, match = rsAnd3.Match_rs(&rsAnd1)
+	accept, match = rsAnd3.Match(&rsAnd1)
 	expect(t, "rsAnd3 niether accepts nor matches rsAnd1", false, false, accept, match)
 
-	accept, match = rsAnd1.Match_rs(&rsAnd1)
+	accept, match = rsAnd1.Match(&rsAnd1)
 	expect(t, "rsAnd1 accepts and matches rsAnd1", true, true, accept, match)
 
-	accept, match = rsAnd4.Match_rs(&rsAnd2)
+	accept, match = rsAnd4.Match(&rsAnd2)
 	expect(t, "rsAnd4 accepts but does not match rsAnd2", true, false, accept, match)
 
-	accept, match = rsAnd2.Match_rs(&rsAnd4)
+	accept, match = rsAnd2.Match(&rsAnd4)
 	expect(t, "rsAnd2 accepts but does not match rsAnd4", true, false, accept, match)
 
-	accept, match = rsOr1.Match_rs(&rsOr3)
+	accept, match = rsOr1.Match(&rsOr3)
 	expect(t, "rsOr1 accepts and matches rsOr3", true, true, accept, match)
 
-	accept, match = rsOr3.Match_rs(&rsOr1)
+	accept, match = rsOr3.Match(&rsOr1)
 	expect(t, "rsOr3 accepts and matches rsOr1", true, true, accept, match)
 
-	accept, match = rsOr4.Match_rs(&rsOr1)
+	accept, match = rsOr4.Match(&rsOr1)
 	expect(t, "rsOr4 niether accepts and matches rsOr1", false, false, accept, match)
 
-	accept, match = rsOr1.Match_rs(&rsOr4)
+	accept, match = rsOr1.Match(&rsOr4)
 	expect(t, "rsOr1 niether accepts and matches rsOr4", false, false, accept, match)
 }
 
 func TestRuleSetRuleSetHybridMatch(t *testing.T) {
 	//now test && and ||
-	accept, match := rsAnd1.Match_rs(&rsOr1)
+	accept, match := rsAnd1.Match(&rsOr1)
 	expect(t, "rsAnd1 accepts and matches rsOr1", true, true, accept, match)
 
-	accept, match = rsOr1.Match_rs(&rsAnd1)
+	accept, match = rsOr1.Match(&rsAnd1)
 	expect(t, "rsOr1 accepts and matches rsAnd1", true, true, accept, match)
 
-	accept, match = rsAnd1.Match_rs(&rsOr4)
+	accept, match = rsAnd1.Match(&rsOr4)
 	expect(t, "rsAnd1 neither accepts not matches rsOr4", false, false, accept, match)
 
-	accept, match = rsOr4.Match_rs(&rsAnd1)
+	accept, match = rsOr4.Match(&rsAnd1)
 	expect(t, "rsOr4 neither accepts not matches rsAnd1", false, false, accept, match)
 }
 
@@ -238,23 +238,23 @@ func TestRuleSetRealWorld(t *testing.T) {
 
 	var request1 = makeIPRule("10.0.0.2").And(port80).And(makeServiceRule("/index"))
 
-	accept, match := pattern.Match_rs(request1)
+	accept, match := pattern.Match(request1)
 	expect(t, "request1 is accepted but does not match pattern", true, false, accept, match)
 
 	var request2 = makeIPRule("10.0.0.1").And(port443).And(makeServiceRule("/home"))
-	accept, match = pattern.Match_rs(request2)
+	accept, match = pattern.Match(request2)
 	expect(t, "request2 is accepted and matched by pattern", true, true, accept, match)
 
 	var request3 = makeIPRule("10.0.0.1").And(port80).And(makeServiceRule("/home"))
-	accept, match = pattern.Match_rs(request3)
+	accept, match = pattern.Match(request3)
 	expect(t, "request3 is accepted and matched by pattern", true, true, accept, match)
 
 	var request4 = makeIPRule("10.0.0.1").And(makeTCPRule("9999")).And(home)
-	accept, match = pattern.Match_rs(request4)
+	accept, match = pattern.Match(request4)
 	expect(t, "request4 is accepted but not matched by pattern", true, false, accept, match)
 
 	var request5 = makeIPRule("10.0.0.1").And(makeUDPRule("80")).And(makeServiceRule("/home"))
-	accept, match = pattern.Match_rs(request5)
+	accept, match = pattern.Match(request5)
 	expect(t, "request5 is not accepted nor matched by pattern", false, false, accept, match)
 }
 
