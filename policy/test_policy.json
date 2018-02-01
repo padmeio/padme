@@ -23,7 +23,7 @@
                   },
                   "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
                 },
-                "IdentifiedBy": { "name": "n1", "value": "v1" }
+                "identified_by": { "name": "n1", "value": "v1" }
               },
               "allowed": [
                 {
@@ -36,7 +36,7 @@
                     },
                     "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
                   },
-                  "IdentifiedBy": { "name": "n1", "value": "v1" }
+                  "identified_by": { "name": "n1", "value": "v1" }
                 }
               ],
               "disallowed": [  ],
@@ -65,7 +65,7 @@
                   },
                   "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
                 },
-                "IdentifiedBy": { "name": "n1", "value": "v1" }
+                "identified_by": { "name": "n1", "value": "v1" }
               },
               "allowed": [
                 {
@@ -78,7 +78,7 @@
                     },
                     "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
                   },
-                  "IdentifiedBy": { "name": "n1", "value": "v1" }
+                  "identified_by": { "name": "n1", "value": "v1" }
                 }
               ],
               "disallowed": [  ],
@@ -106,7 +106,7 @@
           },
           "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
         },
-        "IdentifiedBy": { "name": "n1", "value": "v1" }
+        "identified_by": { "name": "n1", "value": "v1" }
       },
       "allowed": [
         {
@@ -119,7 +119,7 @@
             },
             "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
           },
-          "IdentifiedBy": { "name": "n1", "value": "v1" } }
+          "identified_by": { "name": "n1", "value": "v1" } }
       ],
       "disallowed": [  ],
       "timeline": { "start": "0000-01-01T00:00:00Z", "end": "3000-01-01T00:00:00Z" },

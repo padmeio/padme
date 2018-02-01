@@ -282,7 +282,7 @@ func (c *Credential) String() string {
 // Resource type identifies a resource
 type Resource struct {
 	Name         *RuleSet    `json:"rules"`
-	IdentifiedBy *Credential `json:identified_by"`
+	IdentifiedBy *Credential `json:"identified_by"`
 }
 
 // Match determines if a Resource matches a given Resource r
