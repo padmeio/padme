@@ -69,6 +69,20 @@ func makeTCPRule(destPort string) *RuleSet {
 	return &ruleSet
 }
 
+func makePacketRule(srcIP string, srcPort string, dstIP string, dstPort string) *RuleSet {
+	var rsip = Rule{Layer: "network", LType: "ip", Pattern: "srcIp " + srcIP}
+	var rdip = Rule{Layer: "network", LType: "ip", Pattern: "dstIp " + dstIP}
+	var rsport = Rule{Layer: "network", LType: "tcp", Pattern: "srcPort " + srcPort}
+	var rdport = Rule{Layer: "network", LType: "tcp", Pattern: "dstPort " + dstPort}
+
+	var rs1 = &RuleSet{OOperator: NONE, RRule: &rsip}
+	var rs2 = &RuleSet{OOperator: NONE, RRule: &rdip}
+	var rs3 = &RuleSet{OOperator: NONE, RRule: &rsport}
+	var rs4 = &RuleSet{OOperator: NONE, RRule: &rdport}
+
+	return rs1.And(rs2).And(rs3).And(rs4)
+}
+
 func makeUDPRule(destPort string) *RuleSet {
 	var rule = Rule{Layer: "network", LType: "udp", Pattern: "destPort " + destPort}
 	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
@@ -237,7 +251,6 @@ func TestRuleSetRealWorld(t *testing.T) {
 	var pattern = ip.And(port80.Or(port443)).And(home)
 
 	var request1 = makeIPRule("10.0.0.2").And(port80).And(makeServiceRule("/index"))
-
 	accept, match := pattern.Match(request1)
 	expect(t, "request1 is accepted but does not match pattern", true, false, accept, match)
 
@@ -256,6 +269,34 @@ func TestRuleSetRealWorld(t *testing.T) {
 	var request5 = makeIPRule("10.0.0.1").And(makeUDPRule("80")).And(makeServiceRule("/home"))
 	accept, match = pattern.Match(request5)
 	expect(t, "request5 is not accepted nor matched by pattern", false, false, accept, match)
+}
+
+func TestPacketMatchIfPatternMatchesAllRequestFields(t *testing.T) {
+	pattern := makeIPRule("10.0.0.1").
+		And(makeTCPRule("80").Or(makeTCPRule("443"))).
+		And(makeServiceRule("/home"))
+
+	packet := makePacketRule("10.0.0.1", "10.0.0.4", "1234", "80").And(makeServiceRule("/home"))
+	accept, match := pattern.Match(packet)
+	expect(t, "packet is accepted and matched by pattern", true, true, accept, match)
+}
+
+func TestPacketMatchIfPatternMatchesSomeRequestFields(t *testing.T) {
+	pattern := makeIPRule("10.0.0.1").
+		And(makeTCPRule("80").Or(makeTCPRule("443"))).
+		And(makeServiceRule("/home"))
+
+	packet := makePacketRule("10.0.0.1", "10.0.0.4", "1234", "81").And(makeServiceRule("/home"))
+	accept, match := pattern.Match(packet)
+	expect(t, "packet is accepted but not matched by pattern", true, false, accept, match)
+}
+
+func TestPacketMatchIfSimplePattern(t *testing.T) {
+	pattern := makeTCPRule("80")
+
+	packet := makePacketRule("10.0.0.1", "10.0.0.4", "1234", "80").And(makeServiceRule("/home"))
+	accept, match := pattern.Match(packet)
+	expect(t, "packet is accepted and matched by pattern", true, true, accept, match)
 }
 
 func TestCredentialMatch(t *testing.T) {
