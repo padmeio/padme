@@ -327,7 +327,88 @@ used between the Enforcer and Controller.
 
 # Examples, API Implementations, and Mappings #
 In this section a number of possible integrations are postulated and
-described.
+described. First an idealized web hooks is presented, then integrations
+for [kubernetes](https://kubernetes.io/) and [SPIFFE](https://spiffe.io/) 
+are proposed.
+
+## Generic Webhook API ##
+The intent of PADME is to provide a generalized authorization mechanism. As such
+PADME exposes it policy decision engine in terms of the Answer and Plugin APIs. 
+However this interface is not implemented by most systems. The general industry
+direction is to provide a Webhook for external authentication.  In the case 
+of Kubernetes, the SubjectAccessReview Webhook can be adapted to PADME's needs
+as described elsewhere in this document.  However PADME has an opinion about
+the kind of data that it would prefer to receive from such a callback.
+
+### Request ###
+The following is a proposed general JSON data object that can be passed to
+PADME for conversion to the Answer API.  This is presently tailored towards
+web service requests.
+    {
+        "version": "padme.webhook/v1"
+        "ip": {
+            "src": "10.0.0.1",
+            "dst": "10.0.0.2"
+        },
+        "tcp": {
+            "src": "33333",
+            "dst": "443"
+        },
+        "ns": {
+            "src": "a.host.net"
+        },
+        "http": {
+            "verb": "get",
+            "urn": "some/service/path"
+            "authorization": {
+                "type": "basic",
+                "credentials: "YMMV"
+            }
+            "headers": [
+                "header name": "header value"
+            ]
+        }
+    }
+This scheme gives PADME the ability to make decisions about a wide range of 
+factors related to this request.  The ns field and the http.headers fields are 
+optional.  Providing the Answer API the remaining http headers allows
+the transparent construction of more sophisticated behaviors without
+expanding the Webhook interface. (A change that would likely have to 
+occur in many places). 
+
+A future extension might be to add a field for the certificate used to secure 
+the connection. 
+
+Support for QUIC over UDP replaces the tcp section with an equivalent "udp" 
+section.
+
+Translation of these fields into PADME rule patterns generates a name=value
+element. In PADME rule terms, the Layer for ip, tcp, udp and ns is network.
+The Layer for http is Transport. (The precise names of layers may change as
+the proposal is considered further, and yes Transport has a known existing 
+meaning in the networking space).  
+
+Version does not presently have
+an administrative space assigned for it in the Enforcement Surface Onion 
+(ESO).
+
+The LType is the respective, ip, tcp, udp, ns or http. Headers are named:
+'headers.header name'.
+
+Thus an example rule resulting from this might be:
+{ Layer: "network", LType: "tcp", Pattern: "src=33333" }
+
+### Response ###
+The response to a call of this nature might look like this:
+    {
+        "version": "padme.webhook/v1",
+        "allowed" : "true"
+    }
+or
+    {
+        "version": "padme.webhook/v1",
+        "allowed" : "false"
+    }
 
 ## kubernetes ##
 PADME is able to interact with both Kubernetes authorizers and admission 
@@ -424,7 +505,7 @@ authorization is invoked).
 PADME can also interact with
 [admission controller webhooks](https://kubernetes.io/docs/admin/admission-controllers/). 
 Specially, validating admission controllers. At time of writing the 
-(image policy webhook)[https://kubernetes.io/docs/admin/admission-controllers/#imagepolicywebhook] 
+[image policy webhook](https://kubernetes.io/docs/admin/admission-controllers/#imagepolicywebhook)
 can be supported.  An adapter must be used to convert the Webhook into an 
 answer API query and back.  
 
