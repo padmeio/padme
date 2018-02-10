@@ -374,6 +374,7 @@ matching policies. These can the be used to try new policies for testing.
 #### Webhook ####
 The kubernetes [Subject Access Review API Web Hook](https://kubernetes.io/docs/admin/authorization/webhook/) 
 creates requests that look like this:
+
     {
         "apiVersion": "authorization.k8s.io/v1beta1",
         "kind": "SubjectAccessReview",
@@ -391,11 +392,13 @@ creates requests that look like this:
             ]
         }
     }
+
 This can be translated into an answer query that (in JSON) might look like the 
 following. Note that the Pattern field contents are different for each 
 Rule Layer/LType combination. Further the Credential field also continues to 
 need further elaboration, as we have not yet solidified our RBAC to policy 
 mapping. A possible example of the use of that fields is provided here:
+
     {
         "properties": [
             { "Layer": "application", "LType": "k8s", "Pattern": "kind=subjectAccessReview" },
@@ -408,6 +411,7 @@ mapping. A possible example of the use of that fields is provided here:
         ],
         "credential" { "name": "user", "value": "jane" }
     }
+
 Note that the naming in the Webhook of apiGroup is slightly different from that
 in [K8s ABAC](https://kubernetes.io/docs/admin/authorization/).
 
@@ -425,6 +429,7 @@ can be supported.  An adapter must be used to convert the Webhook into an
 answer API query and back.  
 
 The image policy Webhook creates a request that looks like this:
+
     {
         "apiVersion":"imagepolicy.k8s.io/v1alpha1",
         "kind":"ImageReview",
@@ -443,7 +448,9 @@ The image policy Webhook creates a request that looks like this:
         "namespace":"mynamespace"
         }
     }
+
 This can generate a possible mapping as follows:
+
     {
         "properties": [
             { "Layer": "application", "LType": "k8s", "Pattern": "kind=ImageReview" },
@@ -461,11 +468,14 @@ SPIFFE defines a format for resource identification called the
 SVIDs can be represented by a 
 [x509 certrificate](https://github.com/spiffe/spiffe/blob/master/standards/X509-SVID.md).
 To use SVID with PADME the credential field is expanded as follows:
+
     type Credential struct {
         Name string
         Value string
     }
+
 becomes
+
     type CredentialType int
     const (
         USERNAME_PASSWORD CredentialType = 0
@@ -480,6 +490,7 @@ becomes
         // false otherwise
         Accept(c1 *Credential) bool
     }
+
 In this circumstance, application calling Answer must provide as SPIFFE leaf 
 cert for its credential.  The policy is distributed with the SPIFFE Signing
 cert in its credential field. (Future implementations can optimize the 
