@@ -1,8 +1,9 @@
-PADME Enforcer API Draft Spec
+# PADME Enforcer API Draft Spec #
 
 Copyright Kamil Pawlowski 2018
 
-#Introduction#
+# Introduction #
+
 Application of policies to traffic.
 
 The Enforcer supports several modes of operation.
@@ -25,7 +26,8 @@ policies must still have fields that they apply to filled in so that
 testing of policies off line can occur, and so that policies remain 
 intelligible.
 
-#APIS#
+# APIS #
+
 The Enforcer supports the following APIS: 
 * Packet Level Answer API
 * Request Level Answer API
@@ -49,7 +51,7 @@ Enforcer APIs is still TBD.  For example how Controllers and Enforcers will
 authorize each other is still TDB. It should be assumed however that these 
 kinds of operations will go over SSL. 
 
-##Packet Level Answer API##
+## Packet Level Answer API ##
 The Packet Level Answer API supports infrequent low level look ups such as
 those that might be found in software defined networking. 
 
@@ -63,7 +65,7 @@ those that might be found in software defined networking.
     //
     func Answer(packet byte[]) (bool)
 
-## Request Level Answer API##
+## Request Level Answer API ##
 The Request Level Answer API supports most normal services requests. For 
 example a web services request for a specific target URL uses this call.
 
