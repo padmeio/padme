@@ -348,6 +348,7 @@ the kind of data that it would prefer to receive from such a callback.
 The following is a proposed general JSON data object that can be passed to
 PADME for conversion to the Answer API.  This is presently tailored towards
 web service requests.
+
     {
         "version": "padme.webhook/v1"
         "ip": {
@@ -373,6 +374,7 @@ web service requests.
             ]
         }
     }
+
 This scheme gives PADME the ability to make decisions about a wide range of 
 factors related to this request.  The ns field and the http.headers fields are 
 optional.  Providing the Answer API the remaining http headers allows
@@ -400,15 +402,18 @@ The LType is the respective, ip, tcp, udp, ns or http. Headers are named:
 'headers.header name'.
 
 Thus an example rule resulting from this might be:
-{ Layer: "network", LType: "tcp", Pattern: "src=33333" }
+
+    { Layer: "network", LType: "tcp", Pattern: "src=33333" }
 
 ### Response ###
 The response to a call of this nature might look like this:
+
     {
         "version": "padme.webhook/v1",
         "allowed" : "true"
     }
 or
+
     {
         "version": "padme.webhook/v1",
         "allowed" : "false"
