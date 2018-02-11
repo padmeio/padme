@@ -18,10 +18,10 @@
                   "op": "AND",
                   "left": {
                     "op": "AND",
-                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=80" } }
                   },
-                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
                 },
                 "identified_by": { "name": "n1", "value": "v1" }
               },
@@ -31,10 +31,10 @@
                     "op": "AND",
                     "left": {
                       "op": "AND",
-                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=80" } }
                     },
-                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
                   },
                   "identified_by": { "name": "n1", "value": "v1" }
                 }
@@ -60,10 +60,10 @@
                   "op": "AND",
                   "left": {
                     "op": "AND",
-                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 443" } }
+                    "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+                    "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=443" } }
                   },
-                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                  "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
                 },
                 "identified_by": { "name": "n1", "value": "v1" }
               },
@@ -73,10 +73,10 @@
                     "op": "AND",
                     "left": {
                       "op": "AND",
-                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 443" } }
+                      "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+                      "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=443" } }
                     },
-                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+                    "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
                   },
                   "identified_by": { "name": "n1", "value": "v1" }
                 }
@@ -101,10 +101,10 @@
           "op": "AND",
           "left": {
             "op": "AND",
-            "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-            "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+            "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+            "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=80" } }
           },
-          "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+          "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
         },
         "identified_by": { "name": "n1", "value": "v1" }
       },
@@ -114,10 +114,10 @@
             "op": "AND",
             "left": {
               "op": "AND",
-              "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp 10.0.0.1" } },
-              "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort 80" } }
+              "left": { "op": "NONE", "rule": { "layer": "network", "layer_type": "ip", "pattern": "srcIp=10.0.0.1" } },
+              "right": { "op": "NONE", "rule": { "layer": "network", "layer_type": "tcp", "pattern": "destPort=80" } }
             },
-            "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service /home" } }
+            "right": { "op": "NONE", "rule": { "layer": "service", "layer_type": "www", "pattern": "service=/home" } }
           },
           "identified_by": { "name": "n1", "value": "v1" } }
       ],

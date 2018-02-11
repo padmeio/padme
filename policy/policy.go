@@ -17,8 +17,7 @@ limitations under the License.
 /*
 Package policy contains the PADME Policy defintion (v2) See relevant Padme Doc
 
-The matchers in this code operate on two concepts:
-Accept & Match
+The matchers in this code operate on two concepts: Accept & Match.
 In the ESO (Enforcement Surface Onion) matches
 are only possible if the Layer and Layer type are the same.
 Otherwise they become don't care values. Accept covers the
@@ -30,51 +29,73 @@ mean match and not match).  Note that this structure means we
 don't have to flatten Layer rules before we apply policies.
 
 Does R1 match R2:
-R1 !A _  R2       = !A !M
-R1  A !M R2       =  A !M
-R1  A  M R2       =  A  M
+
+    R1 !A _  R2       = !A !M
+    R1  A !M R2       =  A !M
+    R1  A  M R2       =  A  M
 
 Does R3 match R1 && R2:
-R1    &&    R2
-!A  _ && !A  _ = !A !M  // _ means don't care
-!A  _ &&  A !M =  A !M
-!A  _ &&  A  M =  A  M
- A !M && !A !M =  A !M
- A !M &&  A !M =  A !M  // !M && !M
- A !M &&  A  M =  A !M  // !M && M
- A  M &&  A !M =  A !M  //  M && !M
- A  M &&  A  M =  A  M
+
+    R1    &&    R2
+    !A  _ && !A  _ = !A !M  // _ means don't care
+    !A  _ &&  A !M =  A !M
+    !A  _ &&  A  M =  A  M
+     A !M && !A !M =  A !M
+     A !M &&  A !M =  A !M  // !M && !M
+     A !M &&  A  M =  A !M  // !M && M
+     A  M &&  A !M =  A !M  //  M && !M
+     A  M &&  A  M =  A  M
 
 Does R1 match R1 || R2:
-Rr    ||    R2
-!A  _ || !A  _ = !A !M  // _ means don't care
-!A  _ ||  A !M =  A !M
-!A  _ ||  A  M =  A  M
- A !M || !A !M =  A !M
- A !M ||  A !M =  A !M  // !M || !M
- A !M ||  A  M =  A  M  // !M ||  M
- A  M ||  A !M =  A  M  //  M || !M
- A  M ||  A  M =  A  M
+
+    Rr    ||    R2
+    !A  _ || !A  _ = !A !M  // _ means don't care
+    !A  _ ||  A !M =  A !M
+    !A  _ ||  A  M =  A  M
+     A !M || !A !M =  A !M
+     A !M ||  A !M =  A !M  // !M || !M
+     A !M ||  A  M =  A  M  // !M ||  M
+     A  M ||  A !M =  A  M  //  M || !M
+     A  M ||  A  M =  A  M
 
 Generally Combining Truth Values after that its as follow:
-!A  _ && !A  _ = !A !M
-!A  _ &&  A  _ = !A !M
- A  _ && !A  _ = !A !M
- A  _ &&  A  _ = M && M // ie: whatever the two match values are
 
-!A  _ || !A  _ = !A !M
- A !M || !A  _ =  A !M
- A  M || !A  _ =  A  M
-!A  _ ||  A !M =  A !M
-!A  _ ||  A  M =  A  M
- A  _ ||  A  _ =  M || M // i.e. whatever the two match values are.
+    !A  _ && !A  _ = !A !M
+    !A  _ &&  A  _ = !A !M
+     A  _ && !A  _ = !A !M
+     A  _ &&  A  _ = M && M // ie: whatever the two match values are
 
-Why does this work this way?...
-Lets say you have the following rules: SRC IP = 10.0.0.1, DEST_PORT=80 SVC=/foo
+    !A  _ || !A  _ = !A !M
+     A !M || !A  _ =  A !M
+     A  M || !A  _ =  A  M
+    !A  _ ||  A !M =  A !M
+    !A  _ ||  A  M =  A  M
+     A  _ ||  A  _ =  M || M // i.e. whatever the two match values are.
+
+Why does this work this way? Lets say you have the following rules:
+
+    SRC_IP=10.0.0.1 DEST_PORT=80 SVC=/foo
+
 and the following request comes in:
-SRC IP = 10.0.0.1 DEST_PORT=443 SVC=/bar
-Beacuse we do this one at rule at a time, SRC IP must be allowed to partially match
+
+    SRC_IP=10.0.0.1 DEST_PORT=443 SVC=/bar
+
+Beacuse we do this one at rule at a time, SRC_IP must be allowed to partially match
 but once we start composing SRC_IP and DEST_PORT or futher must fail.
+
+When working with Policy objects to match an incoming resource, rules are pre-processed
+to remove from the matching process those fields that describe the input resource are
+not part of the Policy rule set. This is done because incoming resources will usually
+have a complete and detailed property sets whilst policies may be configured to take into
+account only certain fields.
+
+For example, a typical TCP packet could be defined as:
+
+    SRC_IP=10.0.0.1 SRC_PORT=5678 DST_IP=10.0.0.5 DEST_POST=80
+
+And policies should be able to configure rules just to match DEST_PORT. For this reason,
+only the fields defined in the relevant policies are taken into account when matching
+incoming resources.
 */
 package policy
 
@@ -90,9 +111,29 @@ var logger = log.New(os.Stdout, "", log.Lshortfile)
 
 // Rule defines a pattern that can be evaluated in a given ESO layer
 type Rule struct {
-	Layer   string `json:"layer"`
-	LType   string `json:"layer_type"`
-	Pattern string `json:"pattern"`
+	Layer    string `json:"layer"`
+	LType    string `json:"layer_type"`
+	Pattern  string `json:"pattern"`
+	disabled bool
+}
+
+// AllowedOperators is the list of operators that are allowed to be used in rules.
+//
+// Equality operators (=, !=) are used to compare explicit values.
+//
+// Numeric operators (>, <, >=, <=) can be used to configure rules to match numeric
+// criterias. e.g. DEST_PORT<1014, TTL>5, etc.
+//
+// Range operators (in) can be used to match values in a given range. A common use case
+// for this is to match packets in a given network. e.g. SRC_IP in 10.0.0.0/24
+var AllowedOperators = []string{"=", ">", "<", "in", "!=", ">=", "<="}
+
+// Expression represents a tokenized rule pattern that can be used by rule matchers and
+// policies to extract the structured information of the field to match.
+type Expression struct {
+	Field string
+	Value string
+	Op    string
 }
 
 // Match implements a primitive rule matcher.
@@ -105,12 +146,27 @@ type Rule struct {
 // Further developement must be done to provide different matchers
 // for specific patterns/Layers
 func (r *Rule) Match(r1 *Rule) (bool, bool) {
-	//logger.Printf("%s/%s/%s match %s/%s/%s", r.Layer, r.LType, r.Pattern, r1.Layer, r1.LType, r1.Pattern)
 	if strings.Compare(r.Layer, r1.Layer) == 0 &&
 		strings.Compare(r.LType, r1.LType) == 0 {
 		return true, strings.Compare(r.Pattern, r1.Pattern) == 0
 	}
 	return false, false
+}
+
+// Expression parses the rule pattern and builds an Expression object that can be passed to
+// marchers and used by policies that need access to the rule fields.
+func (r *Rule) Expression() Expression {
+	var expr Expression
+	for _, op := range AllowedOperators {
+		if idx := strings.Index(r.Pattern, op); idx != -1 {
+			expr = Expression{
+				Op:    op,
+				Field: r.Pattern[:idx],
+				Value: r.Pattern[idx+len(op):],
+			}
+		}
+	}
+	return expr
 }
 
 func (r *Rule) String() string {
@@ -128,10 +184,10 @@ const (
 )
 
 // RuleSet := Rule | RuleSet AND RuleSet | RuleSet OR RuleSet
-// Where RuleSet := Rule, operator == NONE and
-//	LArg == nil and RArg = nil
-// Where RuleSet := RuleSet AND RuleSet | RuleSet OR RuleSet
-//	Operator == OR or == AND, rule == nil
+//
+// Where RuleSet := Rule, operator == NONE and LArg == nil and RArg = nil
+//
+// Where RuleSet := RuleSet AND RuleSet | RuleSet OR RuleSet Operator == OR | Operator == AND, rule == nil
 //
 // When defining RuleSets for policies AND and OR are permissible
 // When defining RuleSets to match for now we only support
@@ -164,6 +220,9 @@ type RuleSet struct {
 //
 // The AND match here must be able to say: ip == foo and tcp port = bar
 func (rs *RuleSet) MatchRule(r *Rule) (bool, bool) {
+	if r.disabled {
+		return true, true
+	}
 	if rs.OOperator == NONE {
 		return rs.RRule.Match(r)
 	}
@@ -193,6 +252,7 @@ func (rs *RuleSet) MatchRule(r *Rule) (bool, bool) {
 		rAccept, rMatch := rs.RArg.MatchRule(r)
 		if rAccept && rMatch {
 			return true, true
+
 		}
 		if lAccept || rAccept {
 			return true, false
@@ -251,6 +311,38 @@ func (rs *RuleSet) Or(rs1 *RuleSet) *RuleSet {
 	return &ruleSet
 }
 
+// Map returns a copy of the RuleSet where the given function has been applied to
+// all its child Rules.
+func (rs *RuleSet) Map(function func(*Rule) Rule) *RuleSet {
+	var rule Rule
+	var left, right *RuleSet
+
+	if rs.RRule != nil {
+		rule = function(rs.RRule)
+	}
+	if rs.LArg != nil {
+		left = rs.LArg.Map(function)
+	}
+	if rs.RArg != nil {
+		right = rs.RArg.Map(function)
+	}
+
+	return &RuleSet{OOperator: rs.OOperator, RRule: &rule, LArg: left, RArg: right}
+}
+
+// Foreach applies the given function to the rules in the RuleSet
+func (rs *RuleSet) Foreach(function func(*Rule)) {
+	if rs.RRule != nil {
+		function(rs.RRule)
+	}
+	if rs.LArg != nil {
+		rs.LArg.Foreach(function)
+	}
+	if rs.RArg != nil {
+		rs.RArg.Foreach(function)
+	}
+}
+
 func (rs *RuleSet) String() string {
 	if rs.OOperator == NONE {
 		return rs.RRule.String()
@@ -283,17 +375,56 @@ func (c *Credential) String() string {
 type Resource struct {
 	Name         *RuleSet    `json:"rules"`
 	IdentifiedBy *Credential `json:"identified_by"`
+
+	// When matching an input resource against a resource defined by a Policy, we just have
+	// to consider the rules that apply to the fields defined in the policy. The rest should
+	// be ignored.
+	fieldsToMatch []string
+}
+
+// getRulesToMatch builds a copy of the input resource with all the rules that should not be applied
+// marked to be ignored. Let's use a copy to perform the local match to avoid affecting
+// the behavior of later stages of the matching system
+func getRulesToMatch(fieldsToMatch []string, input *Resource) *RuleSet {
+	return input.Name.Map(func(rule *Rule) Rule {
+		expr := rule.Expression()
+		r := Rule{
+			LType:    rule.LType,
+			Layer:    rule.Layer,
+			Pattern:  rule.Pattern,
+			disabled: true,
+		}
+		for _, f := range fieldsToMatch {
+			if f == expr.Field {
+				r.disabled = false
+			}
+		}
+		return r
+	})
+}
+
+// When matching an input resource against a resource defined by the policy, just consider
+// the rules applied to the fields defined in the policy and ignore the rest
+func processRuleFields(r *Resource) {
+	if len(r.fieldsToMatch) == 0 {
+		r.Name.Foreach(func(rule *Rule) {
+			r.fieldsToMatch = append(r.fieldsToMatch, rule.Expression().Field)
+		})
+	}
 }
 
 // Match determines if a Resource matches a given Resource r
 // This means that the ruleset accepts the rule in r1
 // and identified by accepts the resource.
 //
-// return accept, match - accept indicates a rule
-// level accept. match indicate a rule level match
-// and credential acceptance.
+// Return (accept, match)
+//	accept - indicates a rule level accept.
+//	match  - indicate a rule level match and credential acceptance.
 func (r *Resource) Match(r1 *Resource) (bool, bool) {
-	accept, match := r.Name.Match(r1.Name)
+	processRuleFields(r)
+	rulesToMatch := getRulesToMatch(r.fieldsToMatch, r1)
+
+	accept, match := r.Name.Match(rulesToMatch)
 	if !accept {
 		return false, false
 	}
@@ -389,17 +520,17 @@ type Policy struct {
 }
 
 // Match determinies, given a source, a target, a policy, and a time,
-// if source can access target via the policy
+// if source can access target via the policy.
 //
 // Parameters:
-// source - Resource making the request
-// target - Resource being accessed
-// when   - time when the request is being made
-// where  - a location where the policy is being evaluated
+//	source - Resource making the request
+//	target - Resource being accessed
+//	when   - time when the request is being made
+//	where  - a location where the policy is being evaluated
 //
-// return (valid, accept, allow)
+// Return: (valid, accept, allow)
 //	valid  - indicates if the policy is valid at the time of evaluation
-//	    if not, then accept and allow are meaningless.
+//		 if not, then accept and allow are meaningless.
 //	accept - indicates if the policy applies to this target and location
 //	allow  - indicates if permission is granted or denied
 func (p *Policy) Match(source *Resource, target *Resource, when time.Time, where *Location) (bool, bool, bool) {
@@ -458,10 +589,9 @@ func (p *Policy) String() string {
 
 // PolicyLine := Policy | PolicyLine AND PolicyLine | PolicyLine OR PolicyLine
 //
-// Where PolicyLine := Policy, opeartor == NONE and
-//	LArg == nil and RArg = nil
-// Where PolicyLine := PolicyLine AND PolicyLine | PolicyLine OR PolicyLine
-//	Operator == OR or == AND, policy == nil
+// Where PolicyLine := Policy, opeartor == NONE and LArg == nil and RArg = nil
+//
+// Where PolicyLine := PolicyLine AND PolicyLine | PolicyLine OR PolicyLine Operator == OR | Operator == AND, policy == nil
 type PolicyLine struct {
 	OOperator Operator
 	PPolicy   *Policy
@@ -475,7 +605,7 @@ type PolicyLine struct {
 // Note that you can realy shoot yourself in the foot with OR operator, so
 // be carefull.
 //
-// see (p* Policy) Match for inputs and outputs
+// See (p* Policy) Match for inputs and outputs
 func (p *PolicyLine) Match(source *Resource, target *Resource, when time.Time, where *Location) (bool, bool, bool) {
 	if p.OOperator == NONE {
 		return p.PPolicy.Match(source, target, when, where)
@@ -539,14 +669,14 @@ type PolicyBundle struct {
 // is denied. As soon as a policy is found that denies the request no futher searching is done.
 //
 // Parameters:
-// source - Resource making the request
-// target - Resource being accessed
-// when   - time when the request is being made
-// where  - a location where the policy is being evaluated
+//	source - Resource making the request
+//	target - Resource being accessed
+//	when   - time when the request is being made
+//	where  - a location where the policy is being evaluated
 //
-// return (valid, accept, allow)
+// Return: (valid, accept, allow)
 //	valid  - indicates if any policy was valid at the time of evaluation
-//	    if not, then accept and allow are meaningless.
+//		 if not, then accept and allow are meaningless.
 //	accept - indicates if a valid policy applied to this target and location
 //	allow  - indicates if permission is granted or denied
 func (p *PolicyBundle) Match(source *Resource, target *Resource, when time.Time, where *Location) (bool, bool, bool) {

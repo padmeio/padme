@@ -58,25 +58,45 @@ func expect(t *testing.T, s string, eAccept bool, eMatch bool, accept bool, matc
  * return a network/ip Layer rule for a given source address
  */
 func makeIPRule(srcIP string) *RuleSet {
-	var rule = Rule{Layer: "network", LType: "ip", Pattern: "srcIp " + srcIP}
+	var rule = Rule{Layer: "network", LType: "ip", Pattern: "srcIp=" + srcIP}
+	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
+	return &ruleSet
+}
+
+func makeDestIPRule(srcIP string) *RuleSet {
+	var rule = Rule{Layer: "network", LType: "ip", Pattern: "destIp=" + srcIP}
 	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
 	return &ruleSet
 }
 
 func makeTCPRule(destPort string) *RuleSet {
-	var rule = Rule{Layer: "network", LType: "tcp", Pattern: "destPort " + destPort}
+	var rule = Rule{Layer: "network", LType: "tcp", Pattern: "destPort=" + destPort}
 	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
 	return &ruleSet
 }
 
+func makeTCPFrame(srcIP string, srcPort string, dstIP string, dstPort string) *RuleSet {
+	var rsip = Rule{Layer: "network", LType: "ip", Pattern: "srcIp=" + srcIP}
+	var rdip = Rule{Layer: "network", LType: "ip", Pattern: "dstIp=" + dstIP}
+	var rsport = Rule{Layer: "network", LType: "tcp", Pattern: "srcPort=" + srcPort}
+	var rdport = Rule{Layer: "network", LType: "tcp", Pattern: "dstPort=" + dstPort}
+
+	var rs1 = &RuleSet{OOperator: NONE, RRule: &rsip}
+	var rs2 = &RuleSet{OOperator: NONE, RRule: &rdip}
+	var rs3 = &RuleSet{OOperator: NONE, RRule: &rsport}
+	var rs4 = &RuleSet{OOperator: NONE, RRule: &rdport}
+
+	return rs1.And(rs2).And(rs3).And(rs4)
+}
+
 func makeUDPRule(destPort string) *RuleSet {
-	var rule = Rule{Layer: "network", LType: "udp", Pattern: "destPort " + destPort}
+	var rule = Rule{Layer: "network", LType: "udp", Pattern: "destPort=" + destPort}
 	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
 	return &ruleSet
 }
 
 func makeServiceRule(service string) *RuleSet {
-	var rule = Rule{Layer: "service", LType: "www", Pattern: "service " + service}
+	var rule = Rule{Layer: "service", LType: "www", Pattern: "service=" + service}
 	var ruleSet = RuleSet{OOperator: NONE, RRule: &rule, LArg: nil, RArg: nil}
 	return &ruleSet
 }
@@ -111,6 +131,38 @@ func makePolicy(target Resource, allowed *Resource, disallowed *Resource, timeli
 func addPolicyContents(policy *Policy, contents ...*Contents) {
 	for _, c := range contents {
 		policy.CContents = append(policy.CContents, c)
+	}
+}
+
+func TestApplyReturnsAFlatCopy(t *testing.T) {
+	flatCopy := rsAnd4.Map(func(rule *Rule) Rule {
+		return Rule{LType: rule.LType, Layer: rule.Layer, Pattern: rule.Pattern}
+	})
+
+	if flatCopy.String() != rsAnd4.String() {
+		t.Errorf("Flat copy and original differ! %v != %v", flatCopy, &rsAnd4)
+	}
+	if flatCopy == &rsAnd4 {
+		t.Errorf("Flat copy and original are the same pointer! %p != %p", flatCopy, &rsAnd4)
+	}
+
+	flatCopy.LArg.RRule.Pattern = "Modified"
+	if flatCopy.String() == rsAnd4.String() {
+		t.Errorf("Flat copy modified the original! %v", &rsAnd4)
+	}
+}
+
+func TestRuleSetForeach(t *testing.T) {
+	left := RuleSet{OOperator: NONE, RRule: &Rule{Layer: "l", LType: "l", Pattern: "l"}}
+	right := RuleSet{OOperator: NONE, RRule: &Rule{Layer: "r", LType: "r", Pattern: "r"}}
+	rs := &RuleSet{OOperator: AND, LArg: &left, RArg: &right}
+
+	rs.Foreach(func(rule *Rule) {
+		rule.Pattern = "A"
+	})
+
+	if rs.LArg.RRule.Pattern != "A" || rs.RArg.RRule.Pattern != "A" {
+		t.Errorf("Expected foreach to have modified the rules")
 	}
 }
 
@@ -237,7 +289,6 @@ func TestRuleSetRealWorld(t *testing.T) {
 	var pattern = ip.And(port80.Or(port443)).And(home)
 
 	var request1 = makeIPRule("10.0.0.2").And(port80).And(makeServiceRule("/index"))
-
 	accept, match := pattern.Match(request1)
 	expect(t, "request1 is accepted but does not match pattern", true, false, accept, match)
 
@@ -332,6 +383,26 @@ func TestPolicyMatch(t *testing.T) {
 
 	valid, accept, allow = policyAllow.Match(&resource1, &targetResource, time.Now(), &nowhere)
 	expect(t, "policyAllow should not accept nor allow resource1 to access targetResource from nowhere", false, false, accept, allow)
+}
+
+func TestPolicyMatchWithIgnoredRules(t *testing.T) {
+	var frame = makeTCPFrame("1.1.1.1", "2.2.2.2", "9999", "80")
+	var c1 = Credential{Name: "srcIp", Value: "1.1.1.1"}
+	var input = Resource{Name: frame, IdentifiedBy: &c1}
+
+	var forever = Duration{time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)}
+	var everywhere = Location{"everywhere"}
+	var listenIPPort = makeDestIPRule("2.2.2.2").And(makeTCPRule("80"))
+	var target = Resource{Name: listenIPPort, IdentifiedBy: &c1}
+
+	var listenPort = makeTCPRule("80")
+	var allowed = Resource{Name: listenPort, IdentifiedBy: &c1}
+	var tcpPolicy = makePolicy(target, &allowed, nil, forever, everywhere)
+
+	valid, accept, allow := tcpPolicy.Match(&input, &target, time.Now(), &everywhere)
+	if valid == false || accept == false || allow == false {
+		t.Errorf("allow tcp should allow %v %v %v", valid, accept, allow)
+	}
 }
 
 func TestPolicyMatchDifferentSrcAndTarget(t *testing.T) {
