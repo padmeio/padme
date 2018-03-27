@@ -113,6 +113,7 @@ func makePolicy(target Resource, allowed *Resource, disallowed *Resource, timeli
 	}
 
 	var p = Policy{
+		UUID:          "46489674-5a07-40f9-9a43-7a7d08fa307e",
 		FormatVersion: 0,
 		PolicyVersion: 0,
 		Description:   "",
@@ -547,5 +548,37 @@ func TestPolicySerializeAndMatch(t *testing.T) {
 
 	if valid == false || accept == false || allow == false {
 		t.Errorf("allow pb should  allow %v %v %v", valid, accept, allow)
+	}
+}
+
+func TestPolicyBundleFilter(t *testing.T) {
+	var c1 = Credential{Name: "n1", Value: "v1"}
+	var forever = Duration{time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)}
+	var everywhere = Location{"everywhere"}
+
+	var tcp80Name = makeIPRule("10.0.0.1").And(makeTCPRule("80")).And(makeServiceRule("/home"))
+	var tcp443Name = makeIPRule("10.0.0.1").And(makeTCPRule("443")).And(makeServiceRule("/home"))
+
+	var tcp80Resource = Resource{Name: tcp80Name, IdentifiedBy: &c1}
+	var tcp443Resource = Resource{Name: tcp443Name, IdentifiedBy: &c1}
+
+	var tcp80Policy = makePolicy(tcp80Resource, &tcp80Resource, nil, forever, everywhere)
+	var tcp443Policy = makePolicy(tcp443Resource, &tcp443Resource, nil, forever, everywhere)
+	tcp80Policy.Description = "tcp80Policy"
+	tcp443Policy.Description = "tcp443Policy"
+
+	var tcp80PolicyLine = PolicyLine{OOperator: NONE, PPolicy: tcp80Policy}
+	var tcp443PolicyLine = PolicyLine{OOperator: NONE, PPolicy: tcp443Policy}
+
+	var policyLine = PolicyLine{OOperator: OR, LArg: &tcp80PolicyLine, RArg: &tcp443PolicyLine}
+
+	var allowPB = PolicyBundle{FormatVersion: 0, PolicyVersion: 0, Description: "", Policies: []PolicyBase{tcp443Policy, tcp80Policy, &policyLine}}
+
+	policies := allowPB.Filter(func(p *Policy) bool {
+		return p.Description == "tcp80Policy"
+	})
+
+	if len(policies) != 2 {
+		t.Errorf("expected one policy to match the filter criteria but found: %v", len(policies))
 	}
 }

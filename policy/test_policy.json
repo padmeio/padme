@@ -1,7 +1,7 @@
 {
   "format_version": 1,
   "policy_version": 2,
-  "description": "",
+  "description": "Test bundle",
   "policies": [
     {
       "policy_line": {
@@ -10,6 +10,7 @@
           "policy_line": {
             "op": "NONE",
             "policy": {
+              "uuid": "46489674-5a07-40f9-9a43-7a7d08fa307e",
               "format_version": 0,
               "policy_version": 0,
               "description": "",
@@ -52,6 +53,7 @@
           "policy_line": {
             "op": "NONE",
             "policy": {
+              "uuid": "46489674-5a07-40f9-9a43-7a7d08fa307e",
               "format_version": 0,
               "policy_version": 0,
               "description": "",
@@ -93,6 +95,7 @@
       }
     },
     {
+      "uuid": "46489674-5a07-40f9-9a43-7a7d08fa307e",
       "format_version": 0,
       "policy_version": 0,
       "description": "",

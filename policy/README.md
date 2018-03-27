@@ -1,6 +1,8 @@
 
 PADME Policy Go Module
 
+[![GoDoc](https://godoc.org/github.com/padmeio/padme?status.svg)](http://godoc.org/github.com/padmeio/padme/policy)
+
 The policy package is an articulation of the PADME Policy definition.
 
 The emphasis in this code (at present) is to articulate the design 

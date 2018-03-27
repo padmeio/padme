@@ -17,14 +17,17 @@ package policy
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 )
 
 func assertEquals(t *testing.T, actual interface{}, expected interface{}) {
 	if actual != expected {
-		t.Errorf("Expected %v but \ngot: %v", expected, actual)
+		t.Fatalf("Expected %v but \ngot: %v", expected, actual)
 	}
 }
 
@@ -32,7 +35,7 @@ func TestInvalidOperator(t *testing.T) {
 	invalid := RuleSet{OOperator: 15}
 	_, err := json.Marshal(&invalid)
 	if err == nil {
-		t.Errorf("Expected operator %v to produce an error", invalid.OOperator)
+		t.Fatalf("Expected operator %v to produce an error", invalid.OOperator)
 	}
 	jsonError, _ := err.(*json.MarshalerError)
 	assertEquals(t, jsonError.Err.Error(), "Invalid operator: '15'. Valid values are AND, OR, NONE")
@@ -42,7 +45,7 @@ func testDeserializeMissingOpertor(t *testing.T) {
 	pl := PolicyLine{}
 	err := json.Unmarshal([]byte("{}"), &pl)
 	if err == nil {
-		t.Errorf("Expected deserialization to fail when operator is missing")
+		t.Fatalf("Expected deserialization to fail when operator is missing")
 	}
 	assertEquals(t, err.Error(), "Invalid operator: ''. Valid values are AND, OR, NONE")
 }
@@ -65,10 +68,16 @@ var tcp80PolicyLine = PolicyLine{OOperator: NONE, PPolicy: tcp80Policy}
 var tcp443PolicyLine = PolicyLine{OOperator: NONE, PPolicy: tcp443Policy}
 var tcp80or443PolicyLine = PolicyLine{OOperator: OR, LArg: &tcp80PolicyLine, RArg: &tcp443PolicyLine}
 
-var bundle = PolicyBundle{FormatVersion: 1, PolicyVersion: 2, Description: "", Policies: []PolicyBase{&tcp80or443PolicyLine, tcp80Policy}}
+var bundle = PolicyBundle{
+	FormatVersion: 1,
+	PolicyVersion: 2,
+	Description:   "Test bundle",
+	Policies:      []PolicyBase{&tcp80or443PolicyLine, tcp80Policy},
+}
 
 func TestPolicySerialization(t *testing.T) {
-	var jsonPolicy, err = ioutil.ReadFile("./test_policy.json")
+	var testFile = fmt.Sprintf("%v/src/github.com/padmeio/padme/policy/test_policy.json", os.Getenv("GOPATH"))
+	var jsonPolicy, err = ioutil.ReadFile(testFile)
 	if err != nil {
 		panic("Unable to read policy json file")
 	}
@@ -78,19 +87,23 @@ func TestPolicySerialization(t *testing.T) {
 
 	serialized, err := json.Marshal(&bundle)
 	if err != nil {
-		t.Errorf("Unable to serialize PolicyBundle: %v", err)
+		t.Fatalf("Unable to serialize PolicyBundle: %v", err)
 	}
 
 	deserialized := &PolicyBundle{}
 	if err = json.Unmarshal(jsonPolicy, deserialized); err != nil {
-		t.Errorf("Unable to deserialize PolicyBundle: %v", err)
+		t.Fatalf("Unable to deserialize PolicyBundle: %v", err)
+	}
+
+	if equal := reflect.DeepEqual(&bundle, deserialized); !equal {
+		t.Fatal("Deserialized policy differs from original")
 	}
 
 	// Serialize again (remove pretty formatting) and compare both versions
 	var result []byte
 	result, err = json.Marshal(deserialized)
 	if err != nil {
-		t.Errorf("Unable to serialize PolicyBundle after deserialization: %v", err)
+		t.Fatalf("Unable to serialize PolicyBundle after deserialization: %v", err)
 	}
 
 	assertEquals(t, string(result), string(serialized))

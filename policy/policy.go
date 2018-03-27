@@ -178,9 +178,9 @@ type Operator int
 
 // my go install did not like iota
 const (
-	AND  Operator = 0
-	OR   Operator = 1
-	NONE Operator = 2
+	AND = Operator(iota)
+	OR
+	NONE
 )
 
 // RuleSet := Rule | RuleSet AND RuleSet | RuleSet OR RuleSet
@@ -506,6 +506,7 @@ const PolicyFormatVersion uint64 = 0
 
 // Policy definition
 type Policy struct {
+	UUID          string      `json:"uuid"`
 	FormatVersion uint64      `json:"format_version"`
 	PolicyVersion uint64      `json:"policy_version"`
 	Description   string      `json:"description"`
@@ -648,6 +649,23 @@ func (p *PolicyLine) String() string {
 	}
 }
 
+// FilterPolicies filters the policies in the current PolicyLine that satisfy the given predicate
+func (p *PolicyLine) FilterPolicies(predicate PolicyPredicate) []*Policy {
+	var policies []*Policy
+
+	if p.PPolicy != nil && predicate(p.PPolicy) {
+		policies = append(policies, p.PPolicy)
+	}
+	if p.LArg != nil {
+		policies = append(policies, p.LArg.FilterPolicies(predicate)...)
+	}
+	if p.RArg != nil {
+		policies = append(policies, p.RArg.FilterPolicies(predicate)...)
+	}
+
+	return policies
+}
+
 // PolicyBundleFormatVersion is the version of the Policy Bundle schema
 const PolicyBundleFormatVersion uint64 = 0
 
@@ -707,4 +725,26 @@ func (p *PolicyBundle) Match(source *Resource, target *Resource, when time.Time,
 		allow = true
 	}
 	return valid, accept, allow
+}
+
+// PolicyPredicate defines a predicate used to filter policies in a PolicyBundle
+type PolicyPredicate func(*Policy) bool
+
+// Filter returns the policies in this bundle that satisfy the given predicate
+//
+// When the bundle contains PolicyLine objects, filtering will traverse the PolicyLine
+// structure and return all its policies that match the given predicate.
+func (p *PolicyBundle) Filter(predicate PolicyPredicate) []*Policy {
+	var policies []*Policy
+	for _, base := range p.Policies {
+		switch pb := base.(type) {
+		case *Policy:
+			if predicate(pb) {
+				policies = append(policies, pb)
+			}
+		case *PolicyLine:
+			policies = append(policies, pb.FilterPolicies(predicate)...)
+		}
+	}
+	return policies
 }

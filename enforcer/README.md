@@ -2,6 +2,8 @@
 
 Copyright Kamil Pawlowski 2018
 
+[![GoDoc](https://godoc.org/github.com/padmeio/padme?status.svg)](http://godoc.org/github.com/padmeio/padme/enforcer)
+
 # Introduction #
 
 Application of policies to traffic.
@@ -34,7 +36,7 @@ The Enforcer supports the following APIS:
 * Plugin API
 * Controller API
 
-![Enforcer Diagram](Enforcer_Diagram.png)
+![Enforcer Diagram](docs/Enforcer_Diagram.png)
 
 The first two are used to implement Answer Mode. The third is used to implement
 Plugin Mode. The last of these is used as the interface between the PADME 
